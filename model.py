@@ -214,7 +214,7 @@ class BaselineReader(nn.Module):
         # Initialize bilinear layer for end positions (7)
         self.end_output = BilinearOutput(_hidden_dim, _hidden_dim)
 
-    def update_embedding_dim(self, vocabulary):
+    def update_embedding_dim(self, vocabulary, path):
         """
         loads previous embedding dimension and then adds additional
         embeddings that may be contained in Glove but not yet added
