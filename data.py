@@ -51,10 +51,10 @@ class Vocabulary:
         vocab_adds = collections.defaultdict(int)
         for (_, passage, question, _, _) in samples:
             for token in itertools.chain(passage, question):
-                vocab[token.lower()] += 1
+                vocab_adds[token.lower()] += 1
         top_words = [
             word for (word, _) in
-            sorted(vocab.items(), key=lambda x: x[1], reverse=True)
+            sorted(vocab_adds.items(), key=lambda x: x[1], reverse=True)
             if word not in self.words
         ][:vadds]
 
