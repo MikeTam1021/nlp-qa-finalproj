@@ -39,6 +39,33 @@ class Vocabulary:
         self.encoding = {word: index for (index, word) in enumerate(self.words)}
         self.decoding = {index: word for (index, word) in enumerate(self.words)}
 
+    def increment_vocab(self, samples, vadds):
+        """
+        this adds a number of new words onto the end of the vocab, it
+        should be used for Domain Adaptive Training to incrementally expand
+        the embedding layer without messing up the preexisting index
+
+        vadds: number of vocab items to add to the
+        """
+
+        vocab_adds = collections.defaultdict(int)
+        for (_, passage, question, _, _) in samples:
+            for token in itertools.chain(passage, question):
+                vocab[token.lower()] += 1
+        top_words = [
+            word for (word, _) in
+            sorted(vocab.items(), key=lambda x: x[1], reverse=True)
+            if word not in self.words
+        ][:vadds]
+
+        next_word = len(self.words)
+
+        for word in top_words:
+            self.encoding[word] = next_word
+            self.decoding[next_word] = word
+            next_word += 1
+            self.words.append(word)
+
     def _initialize(self, samples, vocab_size):
         """
         Counts and sorts all tokens in the data, then it returns a vocab
@@ -57,11 +84,11 @@ class Vocabulary:
         for (_, passage, question, _, _) in samples:
             for token in itertools.chain(passage, question):
                 vocab[token.lower()] += 1
-        top_words = [
+        words = [PAD_TOKEN, UNK_TOKEN] + [
             word for (word, _) in
             sorted(vocab.items(), key=lambda x: x[1], reverse=True)
         ][:vocab_size]
-        words = [PAD_TOKEN, UNK_TOKEN] + top_words
+
         return words
 
     def __len__(self):
@@ -235,9 +262,9 @@ class QADataset(Dataset):
             start_positions.append(answer_start_ids)
             end_positions.append(answer_end_ids)
 
-        # print("___examples___")
-        # print(list(zip(passages, questions, start_positions, end_positions))[0])
-        # raise RuntimeError
+        print("___examples___")
+        print(list(zip(passages, questions, start_positions, end_positions))[0])
+        raise RuntimeError
 
         return zip(passages, questions, start_positions, end_positions)
 

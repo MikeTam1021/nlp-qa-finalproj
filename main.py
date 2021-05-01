@@ -23,6 +23,7 @@ Author:
 import argparse
 import pprint
 import json
+import pickle
 
 import torch
 import numpy as np
@@ -65,13 +66,25 @@ parser.add_argument(
     '--model_in_path',
     type=str,
     required=False,
-    help='path to load/save model checkpoints',
+    help='path to load model checkpoints',
 )
 parser.add_argument(
     '--model_out_path',
     type=str,
     required=False,
-    help='path to load/save model checkpoints',
+    help='path to save model checkpoints',
+)
+parser.add_argument(
+    '--vocab_in_path',
+    type=str,
+    required=False,
+    help='path to load vocabulary checkpoints',
+)
+parser.add_argument(
+    '--vocab_out_path',
+    type=str,
+    required=False,
+    help='path to save vocabulary checkpoints',
 )
 parser.add_argument(
     '--embedding_path',
@@ -495,24 +508,32 @@ def main(args):
         dev_dataset = QADataset(args, args.dev_path)
 
     # Create vocabulary and tokenizer.
-    vocabulary = Vocabulary(train_dataset.samples, args.vocab_size)
+    if args.vocab_in_path:
+        vocabulary = pickle.load(args.vocab_in_path)
+        vadds = args.vocab_size - len(vocabulary)
+        vocabulary.increment_vocab(train_dataset.samples, vadds)
+    else:
+        vocabulary = Vocabulary(train_dataset.samples, args.vocab_size)
     tokenizer = Tokenizer(vocabulary)
     for dataset in (train_dataset, dev_dataset):
         dataset.register_tokenizer(tokenizer)
-    # args.vocab_size = len(vocabulary) #vocabulary is an issue in retraining
+    args.vocab_size = len(vocabulary) #vocabulary is an issue in retraining
     args.pad_token_id = tokenizer.pad_token_id
     print(f'vocab words = {len(vocabulary)}')
 
     # Print number of samples.
     print(f'train samples = {len(train_dataset)}')
     print(f'dev samples = {len(dev_dataset)}')
-    print()
 
     # Select model.
     model = _select_model(args)
-    num_pretrained = model.load_pretrained_embeddings(
-        vocabulary, args.embedding_path
-    )
+    if args.retrain:
+        model.load_state_dict(torch.load(args.model_in_path))
+        num_pretrained = model.update_embedding_dim()
+    else:
+        num_pretrained = model.load_pretrained_embeddings(
+            vocabulary, args.embedding_path
+        )
     pct_pretrained = round(num_pretrained / len(vocabulary) * 100., 2)
     print(f'using pre-trained embeddings from \'{args.embedding_path}\'')
     print(
@@ -530,11 +551,12 @@ def main(args):
     print()
 
     if args.do_train:
+        assert args.model_out_path
+        assert args.vocab_out_path
         # Track training statistics for checkpointing.
         eval_history = []
         best_eval_loss = float('inf')
-        if args.retrain:
-            model.load_state_dict(torch.load(args.model_in_path))
+
 
         # Begin training.
         for epoch in range(1, args.epochs + 1):
@@ -548,6 +570,7 @@ def main(args):
             if eval_loss < best_eval_loss:
                 best_eval_loss = eval_loss
                 torch.save(model.state_dict(), args.model_out_path)
+                pickle.dump(vocabulary, args.vocab_out_path)
 
             print(
                 f'epoch = {epoch} | '
