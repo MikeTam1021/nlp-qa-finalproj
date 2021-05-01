@@ -419,7 +419,11 @@ def write_predictions(args, model, dataset):
             official test datasets are blind and hosted by official servers).
     """
     # Load model checkpoint.
-    model.load_state_dict(torch.load(args.model_in_path, map_location='cpu'))
+    if args.model_out_path:
+        model_path = args.model_out_path
+    else:
+        model_path = args.model_in_path
+    model.load_state_dict(torch.load(model_path, map_location='cpu'))
     model.eval()
 
     # Set up test dataloader.
@@ -495,7 +499,7 @@ def main(args):
     tokenizer = Tokenizer(vocabulary)
     for dataset in (train_dataset, dev_dataset):
         dataset.register_tokenizer(tokenizer)
-    args.vocab_size = len(vocabulary)
+    # args.vocab_size = len(vocabulary) #vocabulary is an issue in retraining
     args.pad_token_id = tokenizer.pad_token_id
     print(f'vocab words = {len(vocabulary)}')
 
