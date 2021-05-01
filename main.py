@@ -62,9 +62,15 @@ parser.add_argument(
     help='which model to use',
 )
 parser.add_argument(
-    '--model_path',
+    '--model_in_path',
     type=str,
-    required=True,
+    required=False,
+    help='path to load/save model checkpoints',
+)
+parser.add_argument(
+    '--model_out_path',
+    type=str,
+    required=False,
     help='path to load/save model checkpoints',
 )
 parser.add_argument(
@@ -413,7 +419,7 @@ def write_predictions(args, model, dataset):
             official test datasets are blind and hosted by official servers).
     """
     # Load model checkpoint.
-    model.load_state_dict(torch.load(args.model_path, map_location='cpu'))
+    model.load_state_dict(torch.load(args.model_in_path, map_location='cpu'))
     model.eval()
 
     # Set up test dataloader.
@@ -524,7 +530,7 @@ def main(args):
         eval_history = []
         best_eval_loss = float('inf')
         if args.retrain:
-            model.load_state_dict(torch.load(args.model_path))
+            model.load_state_dict(torch.load(args.model_in_path))
 
         # Begin training.
         for epoch in range(1, args.epochs + 1):
@@ -537,7 +543,7 @@ def main(args):
             eval_history.append(eval_loss < best_eval_loss)
             if eval_loss < best_eval_loss:
                 best_eval_loss = eval_loss
-                torch.save(model.state_dict(), args.model_path)
+                torch.save(model.state_dict(), args.model_out_path)
 
             print(
                 f'epoch = {epoch} | '

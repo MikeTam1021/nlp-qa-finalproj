@@ -162,7 +162,7 @@ class QADataset(Dataset):
         # print("___elements___")
         # print(self.elems[0])
         # print(len(self.elems))
-        for elem in self.elems[:300]:
+        for elem in self.elems:
             # Unpack the context paragraph. Shorten to max sequence length.
             passage = [
                 token.lower() for (token, offset) in elem['context_tokens']
@@ -235,8 +235,8 @@ class QADataset(Dataset):
             start_positions.append(answer_start_ids)
             end_positions.append(answer_end_ids)
 
-        print("___examples___")
-        print(list(zip(passages, questions, start_positions, end_positions))[0])
+        # print("___examples___")
+        # print(list(zip(passages, questions, start_positions, end_positions))[0])
         # raise RuntimeError
 
         return zip(passages, questions, start_positions, end_positions)
@@ -350,6 +350,6 @@ def split_dataset(args, path, perc_train):
     does a train/test split for the data
     """
     meta, elems = load_dataset(path)
-    train_size = len(elems) * perc_train
+    train_size = int(len(elems) * perc_train)
     return (QADataset(args, meta=meta, elems=elems[:train_size]),
             QADataset(args, meta=meta, elems=elems[train_size:]))
