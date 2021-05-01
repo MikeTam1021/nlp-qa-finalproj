@@ -537,8 +537,8 @@ def main(args):
             device = torch.device("cuda")
         else:
             device = torch.device("cpu")
-        model.load_state_dict(torch.load(args.model_in_path), strict=False)
-        model.to(device)
+        model.load_state_dict(torch.load(args.model_in_path,
+                            map_location=device), strict=False)
         num_pretrained = model.update_embedding_dim(
                             vocabulary, args.embedding_path)
     else:
@@ -563,6 +563,7 @@ def main(args):
     if args.do_train:
         assert args.model_out_path
         assert args.vocab_out_path
+        pickle.dump(vocabulary, open(args.vocab_out_path, 'wb'))
         # Track training statistics for checkpointing.
         eval_history = []
         best_eval_loss = float('inf')
@@ -580,7 +581,6 @@ def main(args):
             if eval_loss < best_eval_loss:
                 best_eval_loss = eval_loss
                 torch.save(model.state_dict(), args.model_out_path)
-                pickle.dump(vocabulary, open(args.vocab_out_path, 'wb'))
 
             print(
                 f'epoch = {epoch} | '
