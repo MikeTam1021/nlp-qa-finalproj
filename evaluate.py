@@ -135,7 +135,7 @@ def read_answers(gold_file, perc_train):
     """
     answers = {}
     meta, examples = load_dataset(gold_file)
-    train_size = int(len(elems) * perc_train)
+    train_size = int(len(examples) * perc_train)
     examples = examples[train_size:]
     for example in examples:
         for qa in example['qas']:
