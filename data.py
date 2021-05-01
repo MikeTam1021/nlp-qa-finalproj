@@ -63,7 +63,7 @@ class Vocabulary:
         ][:vocab_size]
         words = [PAD_TOKEN, UNK_TOKEN] + top_words
         return words
-    
+
     def __len__(self):
         return len(self.words)
 
@@ -137,9 +137,13 @@ class QADataset(Dataset):
         tokenizer: `Tokenizer` object.
         batch_size: Int. The number of example in a mini batch.
     """
-    def __init__(self, args, path):
+    def __init__(self, args, path=None, meta=None, elems=None):
         self.args = args
-        self.meta, self.elems = load_dataset(path)
+        if path:
+            self.meta, self.elems = load_dataset(path)
+        else:
+            self.meta = meta
+            self.elems = elems
         self.samples = self._create_samples()
         self.tokenizer = None
         self.batch_size = args.batch_size if 'batch_size' in args else 1
@@ -155,7 +159,10 @@ class QADataset(Dataset):
             A list of words (string).
         """
         samples = []
-        for elem in self.elems:
+        # print("___elements___")
+        # print(self.elems[0])
+        # print(len(self.elems))
+        for elem in self.elems[:300]:
             # Unpack the context paragraph. Shorten to max sequence length.
             passage = [
                 token.lower() for (token, offset) in elem['context_tokens']
@@ -177,7 +184,12 @@ class QADataset(Dataset):
                 samples.append(
                     (qid, passage, question, answer_start, answer_end)
                 )
-                
+
+        # print("___samples___")
+        # print(samples[0])
+        # print(len(samples))
+        # raise RuntimeError
+
         return samples
 
     def _create_data_generator(self, shuffle_examples=False):
@@ -222,6 +234,10 @@ class QADataset(Dataset):
             questions.append(question_ids)
             start_positions.append(answer_start_ids)
             end_positions.append(answer_end_ids)
+
+        print("___examples___")
+        print(list(zip(passages, questions, start_positions, end_positions))[0])
+        # raise RuntimeError
 
         return zip(passages, questions, start_positions, end_positions)
 
@@ -291,6 +307,10 @@ class QADataset(Dataset):
                 'end_positions': cuda(self.args, end_positions).long()
             }
 
+            # print(batch_dict['passages'].shape)
+            # print(batch_dict['questions'].shape)
+            # raise RuntimeError
+
             if no_more_data:
                 if bsz > 0:
                     # This is the last batch (smaller than `batch_size`)
@@ -321,6 +341,15 @@ class QADataset(Dataset):
             tokenizer: If `True`, shuffle examples. Default: `False`
         """
         self.tokenizer = tokenizer
-    
+
     def __len__(self):
         return len(self.samples)
+
+def split_dataset(args, path, perc_train):
+    """
+    does a train/test split for the data
+    """
+    meta, elems = load_dataset(path)
+    train_size = len(elems) * perc_train
+    return (QADataset(args, meta=meta, elems=elems[:train_size]),
+            QADataset(args, meta=meta, elems=elems[train_size:]))

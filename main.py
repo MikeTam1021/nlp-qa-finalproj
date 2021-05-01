@@ -31,7 +31,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
 
-from data import QADataset, Tokenizer, Vocabulary
+from data import QADataset, Tokenizer, Vocabulary, split_dataset
 
 from model import BaselineReader
 from utils import cuda, search_span_endpoints, unpack
@@ -82,7 +82,7 @@ parser.add_argument(
 parser.add_argument(
     '--dev_path',
     type=str,
-    required=True,
+    required=False,
     help='dev dataset path',
 )
 parser.add_argument(
@@ -150,6 +150,22 @@ parser.add_argument(
     '--do_train',
     action='store_true',
     help='flag to enable training',
+)
+parser.add_argument(
+    '--retrain',
+    action='store_true',
+    help='flag to enable retraining of a model for domain adative study',
+)
+parser.add_argument(
+    '--train_split',
+    action='store_true',
+    help='flag to split the training data into train and dev data',
+)
+parser.add_argument(
+    '--perc_train',
+    type=float,
+    default=.7,
+    help='percent of data that should be used for training vs dev',
 )
 parser.add_argument(
     '--do_test',
@@ -228,7 +244,7 @@ def _early_stop(args, eval_history):
     """
     Determines early stopping conditions. If the evaluation loss has
     not improved after `args.early_stop` epoch(s), then training
-    is ended prematurely. 
+    is ended prematurely.
 
     Args:
         args: `argparse` object.
@@ -388,7 +404,7 @@ def evaluate(args, epoch, model, dataset):
 def write_predictions(args, model, dataset):
     """
     Writes model predictions to an output file. The official QA metrics (EM/F1)
-    can be computed using `evaluation.py`. 
+    can be computed using `evaluation.py`.
 
     Args:
         args: `argparse` object.
@@ -430,7 +446,7 @@ def write_predictions(args, model, dataset):
                 start_index, end_index = search_span_endpoints(
                         start_probs, end_probs
                 )
-                
+
                 # Grab predicted span.
                 pred_span = ' '.join(passage[start_index:(end_index + 1)])
 
@@ -461,8 +477,12 @@ def main(args):
         print()
 
     # Set up datasets.
-    train_dataset = QADataset(args, args.train_path)
-    dev_dataset = QADataset(args, args.dev_path)
+    if args.train_split:
+        train_dataset, dev_dataset = split_dataset(args, args.train_path, args.perc_train)
+    else:
+        assert args.dev_path is not None
+        train_dataset = QADataset(args, args.train_path)
+        dev_dataset = QADataset(args, args.dev_path)
 
     # Create vocabulary and tokenizer.
     vocabulary = Vocabulary(train_dataset.samples, args.vocab_size)
@@ -503,6 +523,8 @@ def main(args):
         # Track training statistics for checkpointing.
         eval_history = []
         best_eval_loss = float('inf')
+        if args.retrain:
+            model.load_state_dict(torch.load(args.model_path))
 
         # Begin training.
         for epoch in range(1, args.epochs + 1):
@@ -516,7 +538,7 @@ def main(args):
             if eval_loss < best_eval_loss:
                 best_eval_loss = eval_loss
                 torch.save(model.state_dict(), args.model_path)
-            
+
             print(
                 f'epoch = {epoch} | '
                 f'train loss = {train_loss:.6f} | '
