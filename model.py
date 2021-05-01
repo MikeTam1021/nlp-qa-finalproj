@@ -242,6 +242,8 @@ class BaselineReader(nn.Module):
                 embeddings[index] = torch.tensor(embedding_map[word])
                 num_pretrained += 1
 
+        self.embedding.weight.data = cuda(self.args, embeddings)
+
         return num_pretrained
         # TODO: investigate embeddings here.
 
