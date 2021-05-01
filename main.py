@@ -510,8 +510,10 @@ def main(args):
     # Create vocabulary and tokenizer.
     if args.vocab_in_path:
         vocabulary = pickle.load(open(args.vocab_in_path, 'rb'))
+        old_vocab_size = len(vocabulary)
         #vocab size must be larger than the current vocabulary
         vadds = args.vocab_size - len(vocabulary)
+        new_vocab_size = args.vocab_size
         vocabulary.increment_vocab(train_dataset.samples, vadds)
     else:
         vocabulary = Vocabulary(train_dataset.samples, args.vocab_size)
@@ -527,6 +529,8 @@ def main(args):
     print(f'dev samples = {len(dev_dataset)}')
 
     # Select model.
+    if args.vocab_in_path:
+        args.vocab_size = old_vocab_size
     model = _select_model(args)
     if args.retrain:
         model.load_state_dict(torch.load(args.model_in_path), strict=False)
