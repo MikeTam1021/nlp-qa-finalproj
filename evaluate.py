@@ -19,6 +19,7 @@ import json
 import re
 import string
 from collections import Counter
+from utils import load_dataset
 
 
 def normalize_answer(s):
@@ -122,7 +123,7 @@ def read_predictions(prediction_file):
     return predictions
 
 
-def read_answers(gold_file):
+def read_answers(gold_file, test_split, perc_train):
     """Reads answers from dataset file. Each question (marked by its qid)
     can have multiple possible answer spans.
 
@@ -133,13 +134,12 @@ def read_answers(gold_file):
         True dict mapping question id (id) to answer span(s).
     """
     answers = {}
-    with gzip.open(gold_file, 'rb') as f:
-        for i, line in enumerate(f):
-            example = json.loads(line)
-            if i == 0 and 'header' in example:
-                continue
-            for qa in example['qas']:
-                answers[qa['qid']] = qa['answers']
+    meta, examples = load_dataset(gold_file)
+    train_size = int(len(elems) * perc_train)
+    examples = examples[train_size:]
+    for example in examples
+        for qa in example['qas']:
+            answers[qa['qid']] = qa['answers']
     return answers
 
 
@@ -181,9 +181,10 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_path', type=str, help='path to evaluation dataset')
     parser.add_argument('--output_path', type=str, help='path to output predictions')
     parser.add_argument('--skip_no_answer', action='store_true')
+    parser.add_argument('--perc_train', type=float, default=0.0, help='get test in split data')
     args = parser.parse_args()
 
-    answers = read_answers(args.dataset_path)
+    answers = read_answers(args.dataset_path, args.perc_train)
     predictions = read_predictions(args.output_path)
     metrics = evaluate(answers, predictions, args.skip_no_answer)
     print(metrics)

@@ -262,9 +262,9 @@ class QADataset(Dataset):
             start_positions.append(answer_start_ids)
             end_positions.append(answer_end_ids)
 
-        print("___examples___")
-        print(list(zip(passages, questions, start_positions, end_positions))[0])
-        raise RuntimeError
+        # print("___examples___")
+        # print(list(zip(passages, questions, start_positions, end_positions))[0])
+        # raise RuntimeError
 
         return zip(passages, questions, start_positions, end_positions)
 

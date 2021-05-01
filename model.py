@@ -221,8 +221,28 @@ class BaselineReader(nn.Module):
         as well as leaving new embeddings that are not in glove
         to be learned
         """
+        embedding_map = load_cached_embeddings(path)
+        embeddings = torch.zeros(
+            (len(vocabulary), self.args.embedding_dim)
+        ).uniform_(-0.1, 0.1)
+
         old_embed = self.embedding.weight.data
+        print("____old_embeddings___")
         print(old_embed)
+        print(old_embed.shape)
+        print("____old_embeddings___")
+        num_pretrained = 0
+        for embedding in old_embed:
+            embeddings[num_pretrained] = old_embed
+            num_pretrained += 1
+
+        for word in vocabulary.words[num_pretrained:]:
+            if word in embedding_map:
+                index = vocabulary.encoding[word]
+                embeddings[index] = torch.tensor(embedding_map[word])
+                num_pretrained += 1
+
+        return num_pretrained
         # TODO: investigate embeddings here.
 
     def load_pretrained_embeddings(self, vocabulary, path):
