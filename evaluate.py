@@ -123,7 +123,7 @@ def read_predictions(prediction_file):
     return predictions
 
 
-def read_answers(gold_file, test_split, perc_train):
+def read_answers(gold_file, perc_train):
     """Reads answers from dataset file. Each question (marked by its qid)
     can have multiple possible answer spans.
 
