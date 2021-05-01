@@ -530,7 +530,7 @@ def main(args):
     print(f'dev samples = {len(dev_dataset)}')
 
     # Select model.
-    if args.vocab_in_path and retrain:
+    if args.vocab_in_path and args.retrain:
         args.vocab_size = old_vocab_size
     model = _select_model(args)
     if args.retrain:
