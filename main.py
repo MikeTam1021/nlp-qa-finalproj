@@ -162,7 +162,7 @@ parser.add_argument(
 parser.add_argument(
     '--early_stop',
     type=int,
-    default=1,
+    default=3,
     help='number of epochs to wait until early stopping',
 )
 parser.add_argument(
