@@ -227,10 +227,10 @@ class BaselineReader(nn.Module):
         ).uniform_(-0.1, 0.1)
 
         old_embed = self.embedding.weight.data
-        print("____old_embeddings___")
-        print(old_embed)
-        print(old_embed.shape)
-        print("____old_embeddings___")
+        # print("____old_embeddings___")
+        # print(old_embed)
+        # print(old_embed.shape)
+        # print("____old_embeddings___")
         num_pretrained = 0
         for embed in old_embed:
             embeddings[num_pretrained] = embed

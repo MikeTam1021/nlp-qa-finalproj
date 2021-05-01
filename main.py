@@ -533,7 +533,12 @@ def main(args):
         args.vocab_size = old_vocab_size
     model = _select_model(args)
     if args.retrain:
+        if args.use_gpu:
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
         model.load_state_dict(torch.load(args.model_in_path), strict=False)
+        model.to(device)
         num_pretrained = model.update_embedding_dim(
                             vocabulary, args.embedding_path)
     else:
