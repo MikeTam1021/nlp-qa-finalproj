@@ -510,11 +510,12 @@ def main(args):
     # Create vocabulary and tokenizer.
     if args.vocab_in_path:
         vocabulary = pickle.load(open(args.vocab_in_path, 'rb'))
-        old_vocab_size = len(vocabulary)
-        #vocab size must be larger than the current vocabulary
-        vadds = args.vocab_size - len(vocabulary)
-        new_vocab_size = args.vocab_size
-        vocabulary.increment_vocab(train_dataset.samples, vadds)
+        if args.retrain:
+            old_vocab_size = len(vocabulary)
+            #vocab size must be larger than the current vocabulary
+            vadds = args.vocab_size - len(vocabulary)
+            new_vocab_size = args.vocab_size
+            vocabulary.increment_vocab(train_dataset.samples, vadds)
     else:
         vocabulary = Vocabulary(train_dataset.samples, args.vocab_size)
     tokenizer = Tokenizer(vocabulary)
