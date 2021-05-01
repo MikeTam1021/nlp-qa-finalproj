@@ -232,8 +232,8 @@ class BaselineReader(nn.Module):
         print(old_embed.shape)
         print("____old_embeddings___")
         num_pretrained = 0
-        for embedding in old_embed:
-            embeddings[num_pretrained] = old_embed
+        for embed in old_embed:
+            embeddings[num_pretrained] = embed
             num_pretrained += 1
 
         for word in vocabulary.words[num_pretrained:]:
